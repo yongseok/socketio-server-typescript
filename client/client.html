@@ -1,0 +1,151 @@
+<!-- 클라이언트 HTML 파일 -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        textarea {
+            width: 98%;
+            height: 200px;
+        }
+    </style>
+    <title>Socket.IO Client</title>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        let socket = null;
+        let logs = '';
+        let emitMessageToServer = null;
+
+        function log(message) {
+            const date = new Date();
+            const uri = socket ? socket.io.uri : '';
+            logs += `[${date.toLocaleTimeString()}] [${uri}] ${message} \n`;
+            const textarea = document.querySelector('textarea');
+            textarea.value = logs;
+            textarea.scrollTop = textarea.scrollHeight;
+        }
+        function cleanLog() {
+            logs = '';
+            document.querySelector('textarea').value = '';
+        }
+
+        function connect() {
+            const host = document.getElementById('host').value;
+            const port = document.getElementById('port').value;
+            const nsp = document.getElementById('namespace').value;
+            
+            if (!host || !port) {
+                log('Host or Port is empty');
+                return;
+            }
+            if (socket) {
+                if (socket.connect && socket.io.uri === `http://${host}:${port}`) {
+                    log('Already connected');
+                    console.log('🚀 | connect | socket:', socket);
+                    return;
+                }
+            }
+            socket = io(`http://${host}:${port}`, {
+                withCredentials: true,
+            });
+
+            // user namespace socket 생성
+            const userSocket = io(`http://${host}:${port}/user`);
+            userSocket.on('hi', (msg) => {
+                log(`Connected to User Namespace: ${msg}`);
+            }); 
+            const adminSocket = io(`http://${host}:${port}/admin`, {
+                auth: {
+                    permission: 'admin',
+                }
+            });
+            adminSocket.on('connect_error', (err) => {
+                console.log(err.message); // 'Invalid socket'
+            });
+
+            socket.on('connect', () => {
+                const sid = socket.id;
+                log(`Connected to Server.`);
+                log(`Socket ID: ${sid}`);
+                document.getElementById('status').innerText = 'Connected';
+                emitMessageToServer = emitFormattedMessage(socket.io.uri);
+            });
+            socket.on('disconnect', () => {
+                log('Disconnected from Server');
+                document.getElementById('status').innerText = 'Disconnected';
+            });
+
+            // 서버로부터 메시지 수신 시 이벤트 핸들러
+            socket.on('message', (data) => {
+                log(`Received message: ${data}`);
+            });
+
+            socket.on('join-room', (roomName) => {
+                log(`join room: ${roomName}`);
+            });
+        }
+        function getSelectRoomName() {
+            const selectElement = document.getElementById('channel');
+            return selectElement.options[selectElement.selectedIndex].value;
+        }
+        function disconnect() {
+            socket && socket.disconnect();
+        }
+
+        function joinRoom() {
+            const roomName = getSelectRoomName();
+            socket && socket.emit('joinRoom', roomName);
+        }
+        function leaveRoom() {
+            const roomName = getSelectRoomName();
+            socket && socket.emit('leaveRoom', roomName);
+        }
+        function handleSendMessage() {
+            const roomName = getSelectRoomName();
+            const msg = document.getElementById('message').value;
+            emitMessageToServer('message', roomName, msg);
+        }
+
+        function emitFormattedMessage(serverUri) {
+            const uri = serverUri ? serverUri : '';
+            return function (event, roomName, msg) {
+                const message = `[${uri}] [${event}] [${roomName}] ${msg}`;
+                socket && socket.emit(event, roomName, message);
+            }
+        }
+
+    </script>
+    <h1>Client</h1>
+    <h2>Status</h2>
+    <div id="status">Disconnected</div>
+    <textarea name="log" id="" cols="30" rows="10"></textarea>
+    <button onclick="cleanLog()">Clean Log</button>
+
+    <h3>Server</h3>
+    <input type="text" id="host" placeholder="host" value="localhost"></input>
+    <input type="text" id="namespace" placeholder="namespace" value="/"></input>
+    <input type="text" id="port" placeholder="port" value="3000"></input>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+
+    <div>
+        <select id="channel">
+            <option value="room1">room1</option>
+            <option value="room2">room2</option>
+            <option value="room3">room3</option>
+        </select>
+        <button onclick="joinRoom()">Join Room</button>
+        <button onclick="leaveRoom()">Leave Room</button>
+    </div>
+    <div>
+        <input type="text" id="message" placeholder="Input message"></input>
+        <button onclick="handleSendMessage()">Send Message</button>
+    </div>
+</body>
+
+</html>

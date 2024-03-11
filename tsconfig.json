@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "Node16", //로드 모듈 시스템을 사용하도록 지정
+    "moduleResolution": "Node16",
+    "moduleDetection": "force",
+    // "resolveJsonModule": false, // JSON 파일을 import 할 수 있도록 지정
+    "target": "ES2022",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"],
+  "ts-node": {
+		"transpileOnly": true, // 컴파일만 하고 실행하지 않도록 지정
+		"files": true, // tsconfig.json 파일을 참조하여 컴파일하도록 지정
+		"experimentalResolver": true // 실험적인 해석기를 사용하도록 지정
+	}
+}
