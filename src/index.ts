@@ -150,6 +150,7 @@ function setupNamespace(namespace: Namespace) {
         namespace: namespace.name,
         chatRoomName,
       });
+      chatroomManager.printRoomList();
       printAdapterDetails('joinRoom');
     });
 
@@ -164,6 +165,7 @@ function setupNamespace(namespace: Namespace) {
         namespace: namespace.name,
         chatRoomName,
       });
+      chatroomManager.printRoomList();
       printAdapterDetails('leaveRoom');
     });
   });

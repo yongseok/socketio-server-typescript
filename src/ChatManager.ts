@@ -109,6 +109,14 @@ class ChatroomManager {
   printInputValue(key: string, value: string) {
     console.log(`key: ${key}, value: ${value}`);
   }
+  async printRoomList() {
+    const allKeys = await this.client.keys('user_chatrooms:*');
+    console.log('allKeys:', allKeys);
+    allKeys.forEach(async (key: string) => {
+      const roomList = await this.smembers(key);
+      console.log('key:', key, 'roomList:', roomList);
+    });
+  }
 }
 
 export const chatroomManager = new ChatroomManager();
