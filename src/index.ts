@@ -7,10 +7,10 @@ import express from 'express';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Socket } from 'socket.io';
-import { userManager } from './userManager.js';
-import { roomManager } from './roomManager.js';
 import 'dotenv/config';
 import { getSocketInfo } from './utils/getSocketInfo.js';
+import { chatroomManager } from './ChatManager.js';
+import { ChatRoomUserType } from './types/index.js';
 
 let printAdapterDetails;
 
@@ -67,13 +67,17 @@ function startServer(port: number) {
   });
 
   // Redis Adapter 생성
-  const pubClient = createClient({ url: 'redis://localhost:6379' });
+  const pubClient = createClient({ url: process.env.REDIS_URL });
   const subClient = pubClient.duplicate();
+  const storeClient = pubClient.duplicate();
 
   // Redis 서버 연결
-  Promise.all([pubClient.connect(), subClient.connect()])
+  Promise.all([pubClient.connect(), subClient.connect(), storeClient.connect()])
     .then(() => {
       console.log('Redis Server is running on port 6379');
+
+      // Redis Store 연결
+      chatroomManager.setRedisClient(storeClient);
 
       // Redis Adapter 연결
       io.adapter(createAdapter(pubClient, subClient));
@@ -84,24 +88,6 @@ function startServer(port: number) {
     .catch((error) => {
       console.error('Redis Server connection error:', error);
     });
-
-  {
-    // 발신한 클라이언트를 *포함한* 연결된 모든 클라이언트에게 메시지 발송
-    // io.emit('message', 'send from server1');
-    // 발신한 클라이언트를 *제외한* 연결된 모든 클라이언트에게 메시지 발송
-    // socket.broadcast.emit('message', 'send from server1');
-  }
-
-  io.of('/').adapter.on('create-room', (room) => {
-    console.log(`room ${room} was created`);
-    io.to(room).emit(`room ${room} was created`);
-  });
-
-  // io.of('/').adapter.on('join-room', (room, id) => {
-  //   console.log(`socket ${id} has joined room ${room}`);
-
-  //   io.to(room).emit(`socket ${id} has joined room ${room}`);
-  // });
 
   // '/' 네임스페이스
   setupNamespace(io.of('/'));
@@ -117,70 +103,70 @@ function startServer(port: number) {
 }
 
 function setupNamespace(namespace: Namespace) {
-
   namespace.use((socket, next) => {
     checkUserPermission(socket, next);
   });
 
   namespace.on('connection', async (socket) => {
-    userManager.handleSocketEvent('connection', socket);
-
     const { userId } = getSocketInfo(socket);
     printAdapterDetails('connection');
 
     // 사용자가 속한 모든 방에 대해 join 후에 'connectionComplete' 이벤트를 발생시킵니다.
-    const userRooms = roomManager.getUserRooms(socket);
-    console.log('🚀 | userRooms:', userRooms);
-    userRooms && userRooms.forEach((roomName) => {
-      socket.join(roomName);
-      namespace.emit('join-room', roomName);
-    });
+    const userRoomList = await chatroomManager.getRoomList(
+      namespace.name,
+      userId
+    );
+    console.log(
+      '🚀 | 로그인 시 네임스페이스에 기존 대화방에 입장:',
+      userRoomList
+    );
+    userRoomList &&
+      userRoomList.forEach((chatRoom: ChatRoomUserType) => {
+        socket.join(chatRoom.chatRoomName);
+        namespace.emit('join-room', chatRoom.chatRoomName);
+      });
 
     socket.emit('connectionComplete', { userId });
 
     socket.on('disconnect', () => {
-      userManager.handleSocketEvent('disconnect', socket);
       printAdapterDetails('disconnect');
     });
-    socket.on('roomList', () => {
-      const userRooms = roomManager.getUserRooms(socket);
-      console.log('🚀 | socket.on | userRooms:', userRooms);
-      // socket.emit('roomList', Array.from(userRooms));
-    }),
-    socket.on('message', (roomName, msg) => {
-      socket.broadcast.to(roomName).emit('message', msg);
 
-      console.log(`[${roomName}]message: ${JSON.stringify(msg, null, 2)}`);
+    socket.on('message', (chatRoomName, msg) => {
+      socket.broadcast
+        .to(chatRoomName)
+        .emit('message', { ...msg, chatRoomName });
+
+      printMsgInfo(namespace.name, msg, chatRoomName);
     });
 
-    socket.on('joinRoom', (roomName) => {
-      socket.join(roomName);
+    socket.on('joinRoom', (chatRoomName) => {
+      socket.join(chatRoomName);
       // 방이 생성된 후에 'create-room' 이벤트를 발생시킵니다.
-      namespace.emit('join-room', roomName);
-      
-      roomManager.joinRoom(socket, roomName);
+      socket.emit('join-room', chatRoomName);
+
+      chatroomManager.joinRoom({
+        userId,
+        namespace: namespace.name,
+        chatRoomName,
+      });
       printAdapterDetails('joinRoom');
     });
-    socket.on('leaveRoom', (roomName) => {
-      socket.leave(roomName);
-      namespace.to(roomName).emit('message', `유저가 ${roomName} 방을 떠났습니다.`);
 
-      roomManager.leaveRoom(socket, roomName);
+    socket.on('leaveRoom', (chatRoomName) => {
+      socket.leave(chatRoomName);
+      namespace
+        .to(chatRoomName)
+        .emit('message', `유저가 ${chatRoomName} 방을 떠났습니다.`);
+
+      chatroomManager.leaveRoom({
+        userId,
+        namespace: namespace.name,
+        chatRoomName,
+      });
       printAdapterDetails('leaveRoom');
-    });    
+    });
   });
-}
-
-
-function printAdapterInfo(server: Server) {
-  const io = server;
-  return function(event: string) {
-    if (io) {
-      console.log('event:', event);
-      console.log('rooms:', io.of('/').adapter.rooms);
-      console.log('sids:', io.of('/').adapter.sids);
-    }
-  }
 }
 
 // 미들웨어 함수: 사용자 권한 확인
@@ -197,6 +183,33 @@ function checkUserPermission(socket: Socket, next: (error?: any) => void) {
   } else {
     console.log(`Authentication failed: ${userPermissions}`);
     next(new Error(`'admin'등급만 접근 가능합니다. [현재등급: ${userPermissions}]`));
+  }
+}
+
+function printAdapterInfo(server: Server) {
+  const io = server;
+  return function (event: string) {
+    if (process.env.LOG_REDIS_ADAPTER === 'true' && io) {
+      console.log('event:', event);
+      console.log('rooms:', io.of('/').adapter.rooms);
+      console.log('sids:', io.of('/').adapter.sids);
+    }
+  };
+}
+
+function printMsgInfo(
+  namespaceName: string,
+  msg: string,
+  chatRoomName: string
+) {
+  if (process.env.LOG_MSG_INFO === 'true') {
+    console.log(
+      `[${namespaceName}:${chatRoomName}]message: ${JSON.stringify(
+        msg,
+        null,
+        2
+      )}`
+    );
   }
 }
 
