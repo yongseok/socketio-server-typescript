@@ -1,13 +1,7 @@
 export type UserPermissionType = 'guest' | 'user' | 'admin';
 
-export type UserInfoType = {
+export type UserInfo = {
   userId: string;
   permissions: UserPermissionType;
   sid: string[];
-};
-
-export type ChatRoomUserType = {
-  userId: string;
-  namespace: string;
-  chatRoomName: string;
 };

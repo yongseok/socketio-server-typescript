@@ -1,8 +1,8 @@
-export type MsgType = 'text' | 'image' | 'video' | 'file';
+export type MessageType = 'text' | 'image' | 'video' | 'file';
 
-export type MessageType = {
+export type Message = {
   chatRoomName: string;
   userId: string;
-  msgType: MsgType;
+  msgType: MessageType;
   msg: string;
 };

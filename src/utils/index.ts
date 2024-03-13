@@ -1,2 +1,3 @@
 // utils/index.ts
-export { getSocketInfo } from './getSocketInfo.js';
+export * from './getSocketInfo.js';
+export * from './debug.js';

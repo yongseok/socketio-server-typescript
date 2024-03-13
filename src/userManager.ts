@@ -1,15 +1,15 @@
 import { Socket } from "socket.io";
 import { getSocketInfo } from "./utils/index.js";
-import { UserInfoType } from './types/index.js';
+import { UserInfo } from './types/index.js';
 
 class UserManager {
-  private userInfoMap: Map<string, UserInfoType>;
+  private userInfoMap: Map<string, UserInfo>;
 
   constructor() {
-    this.userInfoMap = new Map<string, UserInfoType>();
+    this.userInfoMap = new Map<string, UserInfo>();
   }
 
-  public addUser(uid: string, info: UserInfoType) {
+  public addUser(uid: string, info: UserInfo) {
     this.userInfoMap.set(uid, info);
   }
 
@@ -45,7 +45,7 @@ class UserManager {
   }
 
   public removeUserWithSid(sid: string) {
-    this.userInfoMap.forEach((value: UserInfoType, key: string) => {
+    this.userInfoMap.forEach((value: UserInfo, key: string) => {
       const idx = value.sid.indexOf(sid);
       if (idx !== -1) {
         value.sid.splice(idx, 1);
