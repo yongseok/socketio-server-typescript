@@ -1,3 +1,9 @@
-export type * from './user.js';
-export type * from './message.js';
-export type * from './chatroom.js';
+export type { UserPermissionType, UserInfo } from './user.js';
+export type { MessageType, Message } from './message.js';
+export type {
+  ChatroomIdentifiers,
+  ChatroomDetails,
+  ChatroomCollectionKeyProps,
+  ChatroomSortingOrder,
+  ChatroomListQuery,
+} from './chatroom.js';

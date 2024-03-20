@@ -3,7 +3,7 @@ import {
   redisStoreClient,
 } from '../wrappers/RedisStoreClient.js';
 
-class UserInfoDAO {
+export class UserInfoDAO {
   private client: RedisStoreClient;
 
   constructor() {

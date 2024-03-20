@@ -1,7 +1,5 @@
 import { chatroomDAO, ChatroomDAO } from '../DAO/ChatroomDAO.js';
-import { Message } from './types.js';
-import { RedisClientType } from 'redis';
-import { ChatroomDetails } from '../types/chatroom.js';
+import { Message, ChatroomDetails } from '../types/index.js';
 
 class ChatroomService {
   private chatroomManager: ChatroomDAO;
@@ -22,8 +20,8 @@ class ChatroomService {
       namespace: namespaceName,
       chatRoomName: chatroomName,
       lastMessageTime: date,
-      messageType: message.type,
-      lastMessage: message.content,
+      messageType: message.msgType,
+      lastMessage: message.msg,
       unreadCount: 0,
     });
   }

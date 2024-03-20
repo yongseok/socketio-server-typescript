@@ -1,9 +1,10 @@
-import { RedisClientType } from 'redis';
+import { createClient } from 'redis';
 
+type RedisClient = ReturnType<typeof createClient>;
 export class RedisStoreClient {
-  private client: RedisClientType;
+  private client: RedisClient;
 
-  setRedisClient(client: RedisClientType) {
+  setRedisClient(client: RedisClient) {
     this.client = client;
   }
 
