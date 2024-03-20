@@ -3,10 +3,12 @@ import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
 import inquirer from 'inquirer';
 import http from 'http';
-import express from 'express';
+import express, { Express } from 'express';
 import 'dotenv/config';
-import { chatroomService } from './types/ChatroomService.js';
+import { chatroomService } from './service/ChatroomService.js';
 import { SocketController } from './controllers/SocketController.js';
+import { WebController } from './controllers/WebController.js';
+import { redisStoreClient } from './wrappers/RedisStoreClient.js';
 
 if (process.env.RUN_MODE === 'prompt') {
   // 터미널에서 포트 번호 입력
@@ -42,7 +44,14 @@ function startServer(port: number) {
   // 클라이언트 서비스 함수 호출
   // clientService(app);
 
+  // 웹 서버 생성
+  setupWebController(app);
+
   // socket.io 서버 생성
+  setupSocketioController(app, port);
+}
+
+function setupSocketioController(app: Express, port: number) {
   const server = http.createServer(app);
   const origin = [
     'http://127.0.0.1:5501',
@@ -57,6 +66,7 @@ function startServer(port: number) {
       origin,
       methods: ['GET', 'POST'],
       credentials: false,
+      optionsSuccessStatus: 200,
     },
   });
 
@@ -70,8 +80,7 @@ function startServer(port: number) {
     .then(() => {
       console.log(`Redis Server is running on [${process.env.REDIS_URL}]`);
 
-      // ChatroomService에 Redis 클라이언트 설정
-      chatroomService.setRedisClient(storeClient);
+      redisStoreClient.setRedisClient(storeClient);
 
       // Redis Adapter 연결
       io.adapter(createAdapter(pubClient, subClient));
@@ -89,4 +98,8 @@ function startServer(port: number) {
     .catch((error) => {
       console.error('Redis Server connection error:', error);
     });
+}
+
+function setupWebController(app: Express) {
+  new WebController(app);
 }

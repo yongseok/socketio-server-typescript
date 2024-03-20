@@ -1,9 +1,9 @@
 import { RedisClientType } from 'redis';
 
-class RedisWrapper {
+export class RedisStoreClient {
   private client: RedisClientType;
 
-  constructor(client: RedisClientType) {
+  setRedisClient(client: RedisClientType) {
     this.client = client;
   }
 
@@ -61,6 +61,24 @@ class RedisWrapper {
     }
   }
 
+  async set(key: string, value: string): Promise<string> {
+    try {
+      return this.client.set(key, value);
+    } catch (error) {
+      console.error('Error occurred while setting value in Redis:', error);
+      throw error;
+    }
+  }
+
+  async get(key: string): Promise<string> {
+    try {
+      return this.client.get(key);
+    } catch (error) {
+      console.error('Error occurred while getting value in Redis:', error);
+      throw error;
+    }
+  }
+
   async del(key: string): Promise<number> {
     try {
       return this.client.del(key);
@@ -71,4 +89,4 @@ class RedisWrapper {
   }
 }
 
-export { RedisWrapper };
+export const redisStoreClient = new RedisStoreClient();

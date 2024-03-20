@@ -1,8 +1,10 @@
 import { Namespace, Socket } from 'socket.io';
-import { chatroomService } from '../types/ChatroomService.js';
+import { chatroomService } from '../service/ChatroomService.js';
 import { ChatroomDetails } from '../types/chatroom.js';
 import { getSocketInfo } from '../utils/getSocketInfo.js';
 import { printAdapterInfo, printMsgInfo } from '../utils/debug.js';
+import { jwtService } from '../auth/JwtService.js';
+import { socketService } from '../service/SocketService.js';
 
 class SocketController {
   private namespace: Namespace;
@@ -15,12 +17,12 @@ class SocketController {
   }
 
   private setupNamespace() {
-    this.namespace.use((socket, next) => {
-      this.checkUserPermission(socket, next);
+    this.namespace.use(async (socket, next) => {
+      await socketService.checkUserPermission(socket, next);
     });
 
     this.namespace.on('connection', async (socket) => {
-      const { userId } = getSocketInfo(socket);
+      const { userId } = await socketService.getSocketInfo(socket);
       this.printAdapterDetails('connection');
 
       // 사용자 connection 시 실행되야 할 메서드들을 실행
@@ -64,26 +66,6 @@ class SocketController {
         this.printAdapterDetails('leaveRoom');
       });
     });
-  }
-
-  private checkUserPermission(socket: Socket, next: (error?: any) => void) {
-    // 클라이언트에서 전송한 권한 정보 확인
-    const userPermissions = socket.handshake.auth.permission;
-
-    // 실제 권한 확인 로직을 수행 (예시로 무조건 true 반환)
-    const userHasPermission = userPermissions === 'admin';
-
-    if (userHasPermission) {
-      console.log(`Authentication passed: ${userPermissions}`);
-      next();
-    } else {
-      console.log(`Authentication failed: ${userPermissions}`);
-      next(
-        new Error(
-          `'admin'등급만 접근 가능합니다. [현재등급: ${userPermissions}]`
-        )
-      );
-    }
   }
 
   // 사용자 connection 시 실행되야 할 메서드들을 모아둔 메서드

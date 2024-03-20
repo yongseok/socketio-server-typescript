@@ -1,5 +1,7 @@
-import { RedisWrapper } from '../wrappers/RedisWrapper.js';
-import { RedisClientType } from 'redis';
+import {
+  RedisStoreClient,
+  redisStoreClient,
+} from '../wrappers/RedisStoreClient.js';
 import {
   ChatroomCollectionKeyProps,
   ChatroomIdentifiers,
@@ -13,11 +15,11 @@ import {
 // - 대화방 리스트를 가져올 때는 sorted set을 사용, 대화방에 대한 데이터를 가져올 때는 set을 사용
 // - 두가지의 데이터를 하나의 키로 저장하면, 대화방 이름으로 특정 대화방을 삭제할때 모든 데이터를 가져와 비교하여 삭제해야 하기 때문에 성능이 떨어지고, 코드가 복잡해진다.
 
-class ChatroomManager {
-  private client: RedisWrapper;
+export class ChatroomDAO {
+  private client: RedisStoreClient;
 
-  constructor(client: RedisClientType) {
-    this.client = new RedisWrapper(client);
+  constructor() {
+    this.client = redisStoreClient;
   }
 
   // 대화방 리스트 조회를 위한 키(마지막 대화 시간 순으로 오름차순 정렬)
@@ -190,4 +192,4 @@ class ChatroomManager {
   }
 }
 
-export { ChatroomManager };
+export const chatroomDAO = new ChatroomDAO();

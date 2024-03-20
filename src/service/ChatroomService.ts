@@ -1,15 +1,13 @@
-import { ChatroomManager } from '../service/ChatroomManager.js';
+import { chatroomDAO, ChatroomDAO } from '../DAO/ChatroomDAO.js';
 import { Message } from './types.js';
 import { RedisClientType } from 'redis';
-import { ChatroomDetails } from './chatroom.js';
+import { ChatroomDetails } from '../types/chatroom.js';
 
 class ChatroomService {
-  private chatroomManager: ChatroomManager;
+  private chatroomManager: ChatroomDAO;
 
-  constructor() {}
-
-  setRedisClient(redisClient: RedisClientType) {
-    this.chatroomManager = new ChatroomManager(redisClient);
+  constructor() {
+    this.chatroomManager = chatroomDAO;
   }
 
   async addChatroom(
