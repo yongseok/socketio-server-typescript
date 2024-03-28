@@ -19,24 +19,7 @@ class JwtService {
     this.secretKey = secretKey;
   }
 
-  // async generateToken(payload: any): Promise<string> {
-  //   // 토큰을 생성하는 로직을 구현해주세요.
-  //   jwt.sign(
-  //     payload,
-  //     this.secretKey,
-  //     { expiresIn: '1h', algorithm: 'HS256' },
-  //     (err, token) => {
-  //       if (err) {
-  //         console.error('Error occurred while generating token:', err);
-  //         throw err;
-  //       }
-  //       return token;
-  //     }
-  //   );
-  // }
-
   generateToken(payload: any): Promise<string> {
-    // 토큰을 생성하는 로직을 구현해주세요.
     return new Promise((resolve, reject) => {
       jwt.sign(
         payload,
@@ -53,23 +36,22 @@ class JwtService {
     });
   }
 
-  verifyToken(token: string): any {
-    // 토큰을 검증하는 로직을 구현해주세요.
+  verifyToken(token: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        jwt.verify(
-          token,
-          this.secretKey,
-          (err: Error | null, decoded: string) => {
-            if (err) {
-              console.error(
-                'Error occurred while verifying token:',
-                JSON.stringify(err, null, 2)
-              );
-              reject(err);
-            }
-            resolve(decoded);
+      jwt.verify(
+        token,
+        this.secretKey,
+        (err: Error | null, decoded: string) => {
+          if (err) {
+            console.error(
+              'Error occurred while verifying token:',
+              JSON.stringify(err, null, 2)
+            );
+            reject(err);
           }
-        );
+          resolve(decoded);
+        }
+      );
     });
   }
 }

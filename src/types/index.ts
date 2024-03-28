@@ -1,4 +1,4 @@
-export type { UserPermissionType, UserInfo } from './user.js';
+export type { UserPermissionType, UserRegistrationType, UserInfo, AuthState } from './user.js';
 export type { MessageType, Message } from './message.js';
 export type {
   ChatroomIdentifiers,

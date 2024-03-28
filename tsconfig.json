@@ -6,13 +6,14 @@
     // "resolveJsonModule": false, // JSON 파일을 import 할 수 있도록 지정
     "target": "ES2022",
     "outDir": "./dist",
-    "esModuleInterop": true,
+    "esModuleInterop": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
-		"transpileOnly": true, // 컴파일만 하고 실행하지 않도록 지정
-		"files": true, // tsconfig.json 파일을 참조하여 컴파일하도록 지정
-		"experimentalResolver": true // 실험적인 해석기를 사용하도록 지정
-	}
+    "transpileOnly": true, // 컴파일만 하고 실행하지 않도록 지정
+    "files": true, // tsconfig.json 파일을 참조하여 컴파일하도록 지정
+    "experimentalResolver": true // 실험적인 해석기를 사용하도록 지정
+  },
+  "resolveJsonModule": true // json 파일 로드 허용
 }

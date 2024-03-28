@@ -1,3 +1,4 @@
+import { UserInfo } from '../types/user.js';
 import {
   RedisStoreClient,
   redisStoreClient,
@@ -13,14 +14,14 @@ export class UserInfoDAO {
   private generatorSaveUserInfoKey(userId: string) {
     return `user:${userId}`;
   }
-  private generatorSaveUserInfoValue(password: string, role: string) {
-    return JSON.stringify({ password, role });
+  private generatorSaveUserInfoValue(userInfo: UserInfo) {
+    return JSON.stringify(userInfo);
   }
 
-  async saveUserInfo(userId: string, password: string, role: string) {
+  async saveUserInfo(userInfo: UserInfo) {
     try {
-      const userInfoKey = this.generatorSaveUserInfoKey(userId);
-      const userInfoValue = this.generatorSaveUserInfoValue(password, role);
+      const userInfoKey = this.generatorSaveUserInfoKey(userInfo.id);
+      const userInfoValue = this.generatorSaveUserInfoValue(userInfo);
       await this.client.set(userInfoKey, userInfoValue);
       return { ok: true };
     } catch (error) {
@@ -28,17 +29,19 @@ export class UserInfoDAO {
       return { ok: false, errorMessage: 'saveUserInfo error' };
     }
   }
-  async getUserInfo(userId: string) {
+  async getUserInfo(
+    userId: string
+  ): Promise<{ ok: boolean; userInfo?: UserInfo; error?: string }> {
     try {
       const userInfoKey = this.generatorSaveUserInfoKey(userId);
       const userInfoValue = await this.client.get(userInfoKey);
       const userInfoJson = JSON.parse(userInfoValue);
       return userInfoValue
-        ? { ok: true, data: { ...userInfoJson, userId } }
+        ? { ok: true, userInfo: { ...userInfoJson, userId } }
         : { ok: false };
     } catch (error) {
       console.error('getUserInfo error:', error);
-      return { ok: false, errorMessage: 'getUserInfo error' };
+      return { ok: false, error: 'getUserInfo error' };
     }
   }
   async delUserInfo(userId: string) {
@@ -48,7 +51,7 @@ export class UserInfoDAO {
       return { ok: true };
     } catch (error) {
       console.error('delUserInfo error:', error);
-      return { ok: false, errorMessage: 'delUserInfo error' };
+      return { ok: false, error: 'delUserInfo error' };
     }
   }
 }

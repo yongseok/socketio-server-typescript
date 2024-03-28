@@ -1,7 +1,13 @@
 export type UserPermissionType = 'guest' | 'user' | 'admin';
-
+export type UserRegistrationType = 'local' | 'goole' | 'naver';
 export type UserInfo = {
-  userId: string;
+  id: string;
+  name?: string;
+  email?: string;
+  password?: string;
   permissions: UserPermissionType;
-  sid: string[];
+  verifiedEmail: boolean;
+  registratioType: UserRegistrationType;
+  picture?: string;
 };
+export type AuthState = 'login' | 'signup';
