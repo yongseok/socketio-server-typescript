@@ -44,7 +44,7 @@ export class GoogleOAuthController {
           );
           res.json({ ok: true, token: messengerToken });
         } else {
-          res.json({ ok: false, error: '' });
+          res.json({ ok: false, error: result.error });
         }
       } catch (error) {
         console.log(error);

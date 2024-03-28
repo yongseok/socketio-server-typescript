@@ -20,7 +20,7 @@ export class GoogleOAuthService {
     try {
       await this.googleOAuth2Client.getAccessToken(code);
       const userInfo = await this.googleOAuth2Client.getUserInfo();
-      return userInfo;
+      return { ok: true, userInfo };
     } catch (error) {
       return { ok: false, error: error.message };
     }
@@ -67,7 +67,11 @@ export class GoogleOAuthService {
       );
 
       if (ok) {
-        return { ok: true, error: '사용자가 이미 존재 -> 로그인 처리' };
+        return {
+          ok: true,
+          userInfo,
+          error: '사용자가 이미 존재 -> 로그인 처리',
+        };
       }
 
       // 사용자 등록/업데이트
